@@ -15,11 +15,11 @@ client = AsyncIOMotorClient(MONGO_URI)
 db = client.get_database("mymind_users")  # Nombre de la BD
 
 # Importar y registrar las rutas
-from app.routes import users, auth, audio
+from app.routes import users, audio, transcriptions
 
 app.include_router(users.router, prefix="/users", tags=["Users"])
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(audio.router, prefix="/audio", tags=["Audio"])
+app.include_router(transcriptions.router, prefix="/users/transcriptions", tags=["Transcriptions"])
 
 # Ruta de prueba
 @app.get("/")
