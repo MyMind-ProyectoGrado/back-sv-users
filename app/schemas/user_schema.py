@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import List, Optional
-from datetime import datetime
+from typing import List, Optional, Literal
+from datetime import datetime, date
 from .transcription_schema import Transcription
 
 
@@ -27,7 +27,13 @@ class DataTreatment(BaseModel):
 class UserSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)  
     email: EmailStr  
-    profilePic: Optional[str] = None  
+    profilePic: Optional[str] = None
+    birthdate: str
+    city: str 
+    personality: Optional[Literal["Introvertido", "Extrovertido"]] = None 
+    university: str 
+    degree: str 
+    gender: Optional[Literal["Masculino", "Femenino", "Omitido"]] = None  
     notifications: bool
     data_treatment: DataTreatment
     transcriptions: List[Transcription] = []  # Usamos el esquema importado
@@ -46,4 +52,12 @@ class UserSchema(BaseModel):
         """Ensure that notifications is a boolean value."""
         if not isinstance(v, bool):
             raise ValueError("Notifications must be a boolean value")
+        return v
+    @validator("birthdate")
+    def validate_date_format(cls, v):
+        """Validate that the date is in the correct format (e.g., ISO format)."""
+        try:
+            datetime.fromisoformat(v)  
+        except ValueError:
+            raise ValueError("Invalid date format, expected ISO format")
         return v

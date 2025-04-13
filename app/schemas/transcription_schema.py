@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import Dict
+from typing import Dict, Optional
 from datetime import datetime
 
 
@@ -11,7 +11,7 @@ class Transcription(BaseModel):
     emotionProbabilities: Dict[str, float]  
     sentiment: str = Field(..., min_length=1)  
     sentimentProbabilities: Dict[str, float]  
-    topic: str = Field(..., min_length=1)  
+    topic: Optional[str] = None 
 
     @validator("date")
     def validate_date_format(cls, v):
