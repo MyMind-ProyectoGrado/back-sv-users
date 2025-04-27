@@ -4,6 +4,12 @@ from datetime import datetime, date
 from .transcription_schema import Transcription
 
 
+class UpdateNotificationsRequest(BaseModel):
+    notifications: bool
+
+class UpdateProfilePicRequest(BaseModel):
+    profilePic: str
+    
 class PrivacyPreferences(BaseModel):
     allow_anonimized_usage: bool
 
@@ -36,7 +42,7 @@ class UserSchema(BaseModel):
     gender: Optional[Literal["Masculino", "Femenino", "Omitido"]] = None  
     notifications: bool
     data_treatment: DataTreatment
-    transcriptions: List[Transcription] = []  # Usamos el esquema importado
+    transcriptions: List[Transcription] = []  
 
     @validator("name")
     def validate_name(cls, v):

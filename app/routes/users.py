@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import users_collection
 from app.core.auth import get_current_user
-from app.schemas.user_schema import UserSchema
+from app.schemas.user_schema import UserSchema, UpdateNotificationsRequest, UpdateProfilePicRequest
 from datetime import datetime
 
 router = APIRouter()
@@ -16,8 +16,8 @@ async def register_user(user: UserSchema, user_id: str = Depends(get_current_use
         raise HTTPException(status_code=409, detail="User is already registered")
 
     user_data = user.dict()
-    user_data["_id"] = user_id  # Use Auth0's sub as MongoDB _id
-    user_data["transcriptions"] = []  # Initialize empty list
+    user_data["_id"] = user_id  
+    user_data["transcriptions"] = []  
 
     await users_collection.insert_one(user_data)
     return {"message": "User successfully registered", "id": user_id}
@@ -94,23 +94,27 @@ async def get_notifications(user_id: str = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-# 🔹 Actualizar las notificaciones del usuario
+
+# 🔹 Toggle user's notification settings
 @router.patch("/update-notifications")
-async def update_notifications(new_notifications: bool, user_id: str = Depends(get_current_user)):
-    """Updates the user's notification settings."""
+async def toggle_notifications(user_id: str = Depends(get_current_user)):
+    """Updates the user's notification preference (true <-> false)."""
     user = await users_collection.find_one({"_id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    current_notifications = user.get("notifications", True)  # Default to True if not set
+    new_notifications_value = not current_notifications
+
     result = await users_collection.update_one(
         {"_id": user_id},
-        {"$set": {"notifications": new_notifications}}  # Actualiza las configuraciones de notificación
+        {"$set": {"notifications": new_notifications_value}}
     )
 
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="No changes made to notifications settings")
 
-    return {"message": "Notification settings updated"}
+    return {"message": "Notification settings updated", "notifications": new_notifications_value}
 
 # 🔹 Get profile picture
 @router.get("/profile-pic")
@@ -121,11 +125,13 @@ async def get_profile_pic(user_id: str = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# 🔹 Update profile picture
-@router.patch("/profile-pic")
-async def update_profile_pic(profile_pic: str, user_id: str = Depends(get_current_user)):
+@router.patch("/update-profile-pic")
+async def update_profile_pic(update: UpdateProfilePicRequest, user_id: str = Depends(get_current_user)):
     """Updates the user's profile picture URL."""
-    result = await users_collection.update_one({"_id": user_id}, {"$set": {"profilePic": profile_pic}})
+    result = await users_collection.update_one(
+        {"_id": user_id},
+        {"$set": {"profilePic": update.profilePic}}
+    )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found or no changes made")
     return {"message": "Profile picture updated"}

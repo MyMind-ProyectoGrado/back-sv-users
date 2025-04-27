@@ -61,10 +61,10 @@ async def get_transcriptions_by_date(date: str, user_id: str = Depends(get_curre
     return [t for t in user.get("transcriptions", []) if t.get("date", "").startswith(date)]
 
 # 🔹 Obtener transcripciones por hora o rango de horas
-@router.get("/by-hour/")
+@router.get("/by-hour/{start_hour}-{end_hour}")
 async def get_transcriptions_by_hour(
     start_hour: int,
-    end_hour: Optional[int] = None,
+    end_hour: int,
     user_id: str = Depends(get_current_user)
 ):
     user = await users_collection.find_one({"_id": user_id}, {"transcriptions": 1, "_id": 0})
@@ -72,11 +72,10 @@ async def get_transcriptions_by_hour(
         raise HTTPException(status_code=404, detail="User not found")
 
     transcriptions = user.get("transcriptions", [])
-    if end_hour is None:
-        return [t for t in transcriptions if int(t.get("time", "00:00").split(":")[0]) == start_hour]
-    else:
-        return [t for t in transcriptions if start_hour <= int(t.get("time", "00:00").split(":")[0]) <= end_hour]
-
+    return [
+        t for t in transcriptions 
+        if start_hour <= int(t.get("time", "00:00").split(":")[0]) <= end_hour
+    ]
 # 🔹 Obtener transcripciones con múltiples filtros
 @router.get("/filter")
 async def get_transcriptions_with_filters(
@@ -108,28 +107,6 @@ async def get_transcriptions_with_filters(
         ]
     return transcriptions
 
-# 🔹 Insertar una nueva transcripción
-@router.post("/add-transcription")
-async def add_transcription(
-    transcription: Transcription,
-    user_id: str = Depends(get_current_user)
-):
-    user = await users_collection.find_one({"_id": user_id})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Asegurar que _id va al principio
-    transcription_data = {"_id": str(ObjectId())}
-    transcription_data.update(transcription.dict())
-
-    result = await users_collection.update_one(
-        {"_id": user_id},
-        {"$push": {"transcriptions": transcription_data}}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=500, detail="Failed to add transcription")
-
-    return {"message": "Transcription added successfully", "transcription_id": transcription_data["_id"]}
 
 # 🔹 Eliminar transcripción específica
 @router.delete("/delete-transcription/{transcription_id}")
