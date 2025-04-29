@@ -5,7 +5,8 @@ passlib[bcrypt]
 pydantic
 python-dotenv
 motor
-pydantic[email]
 email-validator
 python-jose[cryptography]
 bcrypt
+requests
+PyJWT
