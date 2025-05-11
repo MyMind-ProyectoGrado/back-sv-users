@@ -10,3 +10,4 @@ python-jose[cryptography]
 bcrypt
 requests
 PyJWT
+prometheus-fastapi-instrumentator
